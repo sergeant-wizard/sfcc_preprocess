@@ -18,14 +18,14 @@ def parse_date(raw_data):
     return((pandas.to_datetime(raw_data['Dates']) - begin) / (end - begin))
 
 def parse_category(raw_data):
-    return(pandas.Series(raw_data['Category'], dtype="category"))
+    return(pandas.Series(raw_data['Category'], dtype="category").cat.codes)
 
 def parse_day_of_the_week(raw_data):
     return(one_hot_vector_from_category(
         pandas.Series(raw_data['DayOfWeek'], dtype="category")))
 
 def parse_address(raw_data):
-    num_common_address = 64 # restrict address size to fit into memory
+    num_common_address = 10 # restrict address size to fit into memory
     address_parser = lambda x: re.sub('[0-9]+ Block of ', '', x).split(' / ')
     address = raw_data['Address'].map(address_parser)
     streets = numpy.array([street for streets in address for street in streets])
