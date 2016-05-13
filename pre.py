@@ -25,7 +25,7 @@ def parse_day_of_the_week(raw_data):
         pandas.Series(raw_data['DayOfWeek'], dtype="category")))
 
 def parse_address(raw_data):
-    num_common_address = 10 # restrict address size to fit into memory
+    num_common_address = 64 # restrict address size to fit into memory
     address_parser = lambda x: re.sub('[0-9]+ Block of ', '', x).split(' / ')
     address = raw_data['Address'].map(address_parser)
     streets = numpy.array([street for streets in address for street in streets])
@@ -52,12 +52,25 @@ def parse_data(raw_data):
     result = numpy.hstack((numpy.array([date, x, y]).T, dow, street_flags))
     return(result)
 
-raw_train = pandas.read_csv('train.csv')
-category = parse_category(raw_train)
-numpy.save('train', numpy.hstack((numpy.array([category]).T,
-                                  parse_data(raw_train))))
-# save memory
-del raw_train
+def split_yearly(data, year):
+    return(data.Dates.map(lambda date: int(date[0:4]) == year))
 
-raw_test = pandas.read_csv('test.csv')
-numpy.save('test', parse_data(raw_test))
+valid_years = range(2003, 2016)
+
+for year in valid_years:
+    raw_train = pandas.read_csv('train.csv')
+    category = parse_category(raw_train)
+    valid_flags = split_yearly(raw_train, year)
+    # split to yearly data
+    raw_train = raw_train[valid_flags]
+    category = category[valid_flags]
+    numpy.save(
+        "train_{}".format(year),
+        numpy.hstack((numpy.array([category]).T, parse_data(raw_train))))
+
+    # save memory
+    del raw_train
+
+    raw_test = pandas.read_csv('test.csv')
+    raw_test = raw_test[split_yearly(raw_test, year)]
+    numpy.save("test_{}".format(year), parse_data(raw_test))
