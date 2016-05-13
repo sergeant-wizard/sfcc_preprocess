@@ -14,8 +14,29 @@ def one_hot_vector_from_category(input):
 begin = pandas.Timestamp('01/01/2003 00:00:00')
 end = pandas.Timestamp('05/13/2015 23:59:00')
 
+rng = pandas.date_range(begin, end, freq = 'min')
+decomposed_dates = {
+    'hour': rng.hour,
+    'day': rng.day,
+    'month': rng.month,
+    'year': rng.year
+}
+date_elements = pandas.DataFrame(decomposed_dates, index = rng)
+
+def load_data(filename):
+    ret = pandas.read_csv(filename)
+    ret['Dates'] = pandas.to_datetime(ret['Dates'])
+    return(ret)
+
 def parse_date(raw_data):
-    return((pandas.to_datetime(raw_data['Dates']) - begin) / (end - begin))
+    return((raw_data['Dates'] - begin) / (end - begin))
+
+def parse_date_elements(raw_data):
+    ret = raw_data\
+            .merge(date_elements, left_on = 'Dates', right_index = True)\
+            .loc[:, decomposed_dates.keys()]
+
+    return(ret)
 
 def parse_category(raw_data):
     return(pandas.Series(raw_data['Category'], dtype="category").cat.codes)
@@ -46,31 +67,37 @@ def parse_coordinates(raw_data):
 
 def parse_data(raw_data):
     date = parse_date(raw_data)
+    date_elements = parse_date_elements(raw_data)
     x, y = parse_coordinates(raw_data)
     dow = parse_day_of_the_week(raw_data)
     street_flags = parse_address(raw_data)
-    result = numpy.hstack((numpy.array([date, x, y]).T, dow, street_flags))
+    result = numpy.hstack((
+        numpy.array([date, x, y]).T,
+        dow,
+        street_flags))
+        # date_elements))
+        # TODO: add date elements
     return(result)
 
-def split_yearly(data, year):
-    return(data.Dates.map(lambda date: int(date[0:4]) == year))
+def partition_flags(data, years):
+    return(data.Dates.map(lambda date: date.year in years))
 
-valid_years = range(2003, 2016)
+year_partitions = [range(2003, 2009), range(2009, 2016)]
 
-for year in valid_years:
-    raw_train = pandas.read_csv('train.csv')
+for year_index, years in enumerate(year_partitions):
+    raw_train = load_data('train.csv')
     category = parse_category(raw_train)
-    valid_flags = split_yearly(raw_train, year)
+    valid_flags = partition_flags(raw_train, years)
     # split to yearly data
     raw_train = raw_train[valid_flags]
     category = category[valid_flags]
     numpy.save(
-        "train_{}".format(year),
+        "train_{}".format(year_index),
         numpy.hstack((numpy.array([category]).T, parse_data(raw_train))))
 
     # save memory
     del raw_train
 
-    raw_test = pandas.read_csv('test.csv')
-    raw_test = raw_test[split_yearly(raw_test, year)]
-    numpy.save("test_{}".format(year), parse_data(raw_test))
+    raw_test = load_data('test.csv')
+    raw_test = raw_test[partition_flags(raw_test, years)]
+    numpy.save("test_{}".format(year_index), parse_data(raw_test))
