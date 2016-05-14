@@ -74,9 +74,8 @@ def parse_data(raw_data):
     result = numpy.hstack((
         numpy.array([date, x, y]).T,
         dow,
-        street_flags))
-        # date_elements))
-        # TODO: add date elements
+        street_flags,
+        date_elements))
     return(result)
 
 def partition_flags(data, years):
