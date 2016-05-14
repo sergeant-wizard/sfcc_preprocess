@@ -46,7 +46,7 @@ def parse_day_of_the_week(raw_data):
         pandas.Series(raw_data['DayOfWeek'], dtype="category")))
 
 def parse_address(raw_data):
-    num_common_address = 64 # restrict address size to fit into memory
+    num_common_address = 16 # restrict address size to fit into memory
     address_parser = lambda x: re.sub('[0-9]+ Block of ', '', x).split(' / ')
     address = raw_data['Address'].map(address_parser)
     streets = numpy.array([street for streets in address for street in streets])
@@ -93,11 +93,11 @@ for year_index, years in enumerate(year_partitions):
     category = category[valid_flags]
     numpy.save(
         "train_{}".format(year_index),
-        numpy.hstack((numpy.array([category]).T, parse_data(raw_train))))
+        numpy.hstack((numpy.array([category]).T, parse_data(raw_train))).astype(numpy.float16))
 
     # save memory
     del raw_train
 
     raw_test = load_data('test.csv')
     raw_test = raw_test[partition_flags(raw_test, years)]
-    numpy.save("test_{}".format(year_index), parse_data(raw_test))
+    numpy.save("test_{}".format(year_index), parse_data(raw_test).astype(numpy.float16))
