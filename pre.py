@@ -82,7 +82,7 @@ def parse_data(raw_data):
 def partition_flags(data, years):
     return(data.Dates.map(lambda date: date.year in years))
 
-year_partitions = [range(2003, 2009), range(2009, 2016)]
+year_partitions = [range(2003, 2016)]
 
 for year_index, years in enumerate(year_partitions):
     raw_train = load_data('train.csv')
