@@ -39,6 +39,18 @@ def parse_date_elements(raw_data):
     return(ret)
 
 def parse_category(raw_data):
+    used = [
+        False ,True, False, False, True, False, False,  True, False, False,
+        False, False, True, True, False, False, True, False, False,  True,
+        True,  True, False, True, False, True, False, True,  True, False,
+        True, False, True, False,  True, True,  True,  True,  True
+    ]
+    others_index = 20
+    raw_cats = pandas.Series(raw_data['Category'], dtype="category").cat.codes
+    for index, raw_cat in enumerate(raw_cats):
+        if not used[raw_cat]:
+            raw_cats[index] = others_index
+
     return(pandas.Series(raw_data['Category'], dtype="category").cat.codes)
 
 def parse_day_of_the_week(raw_data):
