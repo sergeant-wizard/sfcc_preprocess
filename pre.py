@@ -45,13 +45,13 @@ def parse_category(raw_data):
         True,  True, False, True, False, True, False, True,  True, False,
         True, False, True, False,  True, True,  True,  True,  True
     ]
-    others_index = 20
+    others_index = 5
     raw_cats = pandas.Series(raw_data['Category'], dtype="category").cat.codes
     for index, raw_cat in enumerate(raw_cats):
         if not used[raw_cat]:
             raw_cats[index] = others_index
 
-    return(pandas.Series(raw_data['Category'], dtype="category").cat.codes)
+    return(raw_cats)
 
 def parse_day_of_the_week(raw_data):
     return(one_hot_vector_from_category(
